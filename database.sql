@@ -4,7 +4,7 @@ CREATE DATABASE equipment_rental
     COLLATE utf8mb4_unicode_ci;
 USE equipment_rental;
 
--- Таблиця обладнання
+-- Таблиця обладнання (каталог)
 CREATE TABLE equipment (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
                            code VARCHAR(20) NOT NULL UNIQUE,
@@ -17,22 +17,25 @@ CREATE TABLE equipment (
 
 -- Таблиця клієнтів
 CREATE TABLE client (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    full_name VARCHAR(120) NOT NULL,
-    phone VARCHAR(20) NOT NULL, email VARCHAR(100) NULL,
-    address VARCHAR(200) NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        full_name VARCHAR(120) NOT NULL,
+                        phone VARCHAR(20) NOT NULL,
+                        email VARCHAR(100) NULL,
+                        address VARCHAR(200) NULL,
+
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Таблиця заявок на прокат
+-- Таблиця заявок на прокат (життєвий цикл: CREATED -> CONFIRMED -> ISSUED -> RETURNED)
 -- f1 - терміновість початку (рахує сервер), f2 - попит, f3 - дефіцит одиниць
-CREATE TABLE rental_order(
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    client_id BIGINT NOT NULL,
-    equipment_id BIGINT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    state ENUM('CREATED', 'CONFIRMED', 'ISSUED', 'RETURNED')
+-- priority_index = 0.40*f1 + 0.35*f2 + 0.25*f3
+CREATE TABLE rental_order (
+                              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                              client_id BIGINT NOT NULL,
+                              equipment_id BIGINT NOT NULL,
+                              start_date DATE NOT NULL,
+                              end_date DATE NOT NULL,
+                              state ENUM('CREATED', 'CONFIRMED', 'ISSUED', 'RETURNED')
         NOT NULL DEFAULT 'CREATED',
 
                               f1 DECIMAL(5,2) NOT NULL DEFAULT 0 CHECK (f1 BETWEEN 0 AND 100),
@@ -60,9 +63,9 @@ CREATE TABLE rental_contract (
 );
 
 INSERT INTO equipment (code, name, category, price_per_day) VALUES
-                                                                ('EQ-001', 'Перфоратор Bosch GBH 2-26', 'Електроінструмент', 250.00),
-                                                                ('EQ-002', 'Генератор бензиновий 3 кВт', 'Енергетика', 600.00),
-                                                                ('EQ-003', 'Риштування будівельні', 'Будівельне', 150.00);
+                                                                ('EQ-001', 'Ноутбук Dell Latitude 5440', 'Комп''ютерна техніка', 250.00),
+                                                                ('EQ-002', 'Відеокамера Sony FX30', 'Фото та відео', 600.00),
+                                                                ('EQ-003', 'Мікшерний пульт Behringer X18', 'Аудіо', 150.00);
 
 INSERT INTO client (full_name, phone, email, address) VALUES
                                                           ('Коваленко Олег Петрович', '+380501112233', 'kovalenko@example.com', 'м. Полтава, вул. Соборності, 10'),
