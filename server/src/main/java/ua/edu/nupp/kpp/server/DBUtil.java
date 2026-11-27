@@ -5,9 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Підключення до MySQL. Параметри можна перевизначити змінними середовища
- * DB_URL, DB_USER, DB_PASSWORD, тому пароль не потрапляє до репозиторію.
- * Значення за замовчуванням відповідають типовому XAMPP.
+ * Підключення до MySQL
  */
 public final class DBUtil {
     private static final String URL = env("DB_URL",
@@ -15,6 +13,13 @@ public final class DBUtil {
     private static final String USER = env("DB_USER", "root");
     private static final String PASSWORD = env("DB_PASSWORD", "");
 
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
     private DBUtil() { }
 
     public static Connection getConnection() throws SQLException {
