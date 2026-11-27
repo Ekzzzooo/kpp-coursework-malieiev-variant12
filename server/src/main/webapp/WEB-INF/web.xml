@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+    <display-name>equipment-rental-server</display-name>
+
+    <servlet>
+        <servlet-name>EquipmentServlet</servlet-name>
+        <servlet-class>ua.edu.nupp.kpp.server.EquipmentServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EquipmentServlet</servlet-name>
+        <url-pattern>/equipment</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ClientServlet</servlet-name>
+        <servlet-class>ua.edu.nupp.kpp.server.ClientServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ClientServlet</servlet-name>
+        <url-pattern>/clients</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RentalOrderServlet</servlet-name>
+        <servlet-class>ua.edu.nupp.kpp.server.RentalOrderServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RentalOrderServlet</servlet-name>
+        <url-pattern>/orders</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RentalContractServlet</servlet-name>
+        <servlet-class>ua.edu.nupp.kpp.server.RentalContractServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RentalContractServlet</servlet-name>
+        <url-pattern>/contracts</url-pattern>
+    </servlet-mapping>
+</web-app>
