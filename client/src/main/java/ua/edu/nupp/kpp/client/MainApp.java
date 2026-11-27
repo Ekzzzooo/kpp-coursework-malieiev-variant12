@@ -1,6 +1,7 @@
 package ua.edu.nupp.kpp.client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -28,6 +29,8 @@ public class MainApp extends Application {
     private final TableView<RentalContract> contractTable = new TableView<>(contracts);
 
     private final Label status = new Label("Готово");
+    private final ProgressBar progress = new ProgressBar(0);
+    private final Label importLabel = new Label();
 
     @Override
     public void start(Stage stage) {
@@ -151,22 +154,14 @@ public class MainApp extends Application {
             equipment.setAll(api.getEquipment());
         }));
 
-        Button importBtn = new Button("Імпорт 1 рядка CSV (тест)");
-        importBtn.setOnAction(ev -> safe(() -> {
-            try {
-                Equipment e = new CsvImporter(api).importFirstRow(Path.of("sample-data", "equipment.csv"));
-                equipment.setAll(api.getEquipment());
-                status.setText("Імпортовано: " + e.getName());
-            } catch (java.nio.file.NoSuchFileException ex) {
-                throw new IllegalArgumentException(
-                        "Файл sample-data/equipment.csv не знайдено. Запускайте клієнт із папки client.");
-            } catch (java.io.IOException ex) {
-                throw new IllegalArgumentException("Не вдалося прочитати CSV: " + ex.getMessage());
-            }
-        }));
+        Button importBtn = new Button("Імпортувати CSV");
+        Button cancelBtn = new Button("Скасувати");
+        cancelBtn.setDisable(true);
+        importBtn.setOnAction(ev -> startImport(importBtn, cancelBtn));
+        progress.setPrefWidth(200);
 
         VBox box = new VBox(8, equipmentTable, row(code, name, category, price),
-                row(add, edit, del), row(importBtn));
+                row(add, edit, del), row(importBtn, cancelBtn, progress, importLabel));
         box.setPadding(new Insets(10));
         VBox.setVgrow(equipmentTable, Priority.ALWAYS);
         return box;
@@ -180,6 +175,49 @@ public class MainApp extends Application {
         e.setCategory(category.getText().trim());
         e.setPricePerDay(number(price, "Ціна за день"));
         return e;
+    }
+
+    private void startImport(Button importBtn, Button cancelBtn) {
+        ImportEquipmentTask task = new ImportEquipmentTask(Path.of("sample-data", "equipment.csv"), api);
+        progress.progressProperty().bind(task.progressProperty());
+        importLabel.textProperty().bind(task.messageProperty());
+        importBtn.setDisable(true);
+        cancelBtn.setDisable(false);
+        cancelBtn.setOnAction(ev -> task.cancel());
+        task.setOnSucceeded(ev -> {
+            finishImport(importBtn, cancelBtn, "Готово. Імпортовано записів: " + task.getValue());
+            safe(() -> equipment.setAll(api.getEquipment()));
+        });
+        task.setOnFailed(ev -> {
+            Throwable t = task.getException();
+            String msg;
+            if (t instanceof java.nio.file.NoSuchFileException) {
+                msg = "Файл sample-data/equipment.csv не знайдено. Запускайте клієнт із папки client.";
+            } else if (t instanceof IllegalArgumentException || t instanceof ApiException) {
+                msg = t.getMessage();
+            } else {
+                msg = "Імпорт перервано: " + t.getMessage();
+            }
+            finishImport(importBtn, cancelBtn, "Помилка імпорту. Частина записів могла бути збережена.");
+            status.setText(msg);
+            new Alert(Alert.AlertType.ERROR, msg).showAndWait();
+            safe(() -> equipment.setAll(api.getEquipment()));
+        });
+        task.setOnCancelled(ev -> {
+            finishImport(importBtn, cancelBtn, "Імпорт скасовано; частина записів могла бути збережена.");
+            safe(() -> equipment.setAll(api.getEquipment()));
+        });
+        Thread thread = new Thread(task, "csv-import");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void finishImport(Button importBtn, Button cancelBtn, String message) {
+        progress.progressProperty().unbind();
+        importLabel.textProperty().unbind();
+        importLabel.setText(message);
+        importBtn.setDisable(false);
+        cancelBtn.setDisable(true);
     }
 
     // ---------- Вкладка «Клієнти» ----------
